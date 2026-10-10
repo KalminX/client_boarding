@@ -269,3 +269,16 @@ While SQLite with atomic conditional updates is configured for local MVP develop
 * **Untrusted Content Handling**: AI extractions and uploaded documents are strictly sanitized and treated as untrusted data.
 * **Webhook Security**: Webhook endpoints enforce `X-Webhook-Secret` verification with replay prevention.
 * **Audit Trail**: Every state transition, document approval, reminder dispatch, and signature event is written to an append-only `AuditEvent` log.
+
+
+## 🖼️ Application Screenshots
+
+| Automated Onboarding Setup Wizard | Client Intake & Document Upload Portal |
+|:---:|:---:|
+| ![Onboarding Setup](screenshots/01_onboarding_wizard.png) | ![Client Portal](screenshots/02_client_portal.png) |
+| *Step-by-step business verification, SLA configuration, & workflow triggers* | *Secure document submission with real-time OCR validation* |
+
+| Compliance Review & Approval Queue | Immutable Audit Trail & Timeline |
+|:---:|:---:|
+| ![Approval Queue](screenshots/03_approval_queue.png) | ![Audit History](screenshots/04_audit_history.png) |
+| *Multi-tier managerial approval & risk scoring* | *Comprehensive lifecycle tracking and event audit logs* |
