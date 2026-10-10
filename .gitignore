@@ -9,3 +9,4 @@ media/
 private_media/
 *.log
 .DS_Store
+recordings_raw/

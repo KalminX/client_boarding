@@ -1,0 +1,13 @@
+FORM W-9 (Rev. March 2026) - Department of the Treasury Internal Revenue Service
+1. Legal Entity Name: Apex Global Logistics LLC
+2. Business Name: Apex Logistics
+3. Federal Tax Classification: Limited Liability Company (Corporation)
+4. Address: 200 South Michigan Ave, Suite 400, Chicago, IL 60604
+Part I - Taxpayer Identification Number (TIN):
+EIN: 36-9482103
+Part II - Certification:
+Under penalties of perjury, I certify that:
+1. The number shown on this form is my correct taxpayer identification number.
+2. I am not subject to backup withholding.
+Authorized Signatory: Jordan Reed
+Date: 2026-04-10
