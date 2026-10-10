@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Clients - BoardFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Client Directory</h2>
+        <p class="text-secondary mb-0">Manage customer accounts, primary contacts, and company profiles.</p>
+    </div>
+    <a href="{% url 'client_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Add Client
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-md-10">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by company name, contact person, or email...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary w-100">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Company Name</th>
+                    <th>Primary Contact</th>
+                    <th>Email</th>
+                    <th>Industry</th>
+                    <th>Created</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in page_obj %}
+                    <tr>
+                        <td class="fw-bold">{{ client.company_name }}</td>
+                        <td>{{ client.name }}</td>
+                        <td>{{ client.primary_email }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ client.industry|default:"General" }}</span></td>
+                        <td class="small text-secondary">{{ client.created_at|date:"M d, Y" }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'client_detail' client.id %}" class="btn btn-sm btn-outline-primary">
+                                View Profile &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center py-4 text-secondary">No clients found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

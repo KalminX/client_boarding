@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Client - BoardFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Add New Client Profile</h2>
+        <p class="text-secondary mb-0">Register client company and primary contact details.</p>
+    </div>
+    <a href="{% url 'client_list' %}" class="btn btn-outline-secondary">
+        &larr; Back to Directory
+    </a>
+</div>
+
+<div class="card col-md-8 mx-auto p-4 shadow-sm">
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Company Name *</label>
+                <input type="text" name="company_name" required class="form-control" placeholder="e.g. Apex Global Logistics LLC">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Primary Contact Full Name *</label>
+                <input type="text" name="name" required class="form-control" placeholder="e.g. Sarah Jenkins">
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Email Address *</label>
+                <input type="email" name="primary_email" required class="form-control" placeholder="sarah@apexlogistics.com">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Phone Number</label>
+                <input type="text" name="phone" class="form-control" placeholder="+1 (555) 234-5678">
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Industry</label>
+                <input type="text" name="industry" class="form-control" placeholder="e.g. FinTech / Healthcare / Logistics">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Website</label>
+                <input type="url" name="website" class="form-control" placeholder="https://www.example.com">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-semibold">Billing Address</label>
+            <textarea name="billing_address" rows="3" class="form-control" placeholder="100 Enterprise Way, Suite 400, New York, NY 10001"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+            <i class="bi bi-check-circle me-1"></i> Create Client Profile
+        </button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Client: {{ client.company_name }} - BoardFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">{{ client.company_name }}</h2>
+        <p class="text-secondary mb-0">Primary Contact: {{ client.name }} ({{ client.primary_email }})</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'contract_create' %}" class="btn btn-primary">
+            <i class="bi bi-file-earmark-plus me-1"></i> New Contract
+        </a>
+        <a href="{% url 'client_list' %}" class="btn btn-outline-secondary">
+            &larr; Back to Directory
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3 text-primary">Company Information</h5>
+            <dl class="mb-0 small">
+                <dt class="text-secondary">Legal Company Name:</dt>
+                <dd class="fw-semibold">{{ client.company_name }}</dd>
+
+                <dt class="text-secondary">Primary Contact:</dt>
+                <dd>{{ client.name }}</dd>
+
+                <dt class="text-secondary">Email:</dt>
+                <dd>{{ client.primary_email }}</dd>
+
+                <dt class="text-secondary">Phone:</dt>
+                <dd>{{ client.phone|default:"-" }}</dd>
+
+                <dt class="text-secondary">Billing Address:</dt>
+                <dd>{{ client.billing_address|linebreaksbr|default:"-" }}</dd>
+
+                <dt class="text-secondary">Industry:</dt>
+                <dd>{{ client.industry|default:"-" }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Contracts for this client -->
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Contracts</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                            <th>Signed At</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contract in contracts %}
+                            <tr>
+                                <td class="fw-bold">{{ contract.title }}</td>
+                                <td>${{ contract.contract_value|floatformat:2 }}</td>
+                                <td><span class="badge badge-status status-{{ contract.status }}">{{ contract.get_status_display }}</span></td>
+                                <td class="small text-secondary">{{ contract.signed_at|date:"M d, Y H:i"|default:"-" }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'contract_detail' contract.id %}" class="btn btn-sm btn-outline-primary">
+                                        View &rarr;
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5" class="text-center py-3 text-secondary">No contracts yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Onboarding Cases -->
+        <div class="card">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Onboarding Cases</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Assigned Staff</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in onboarding_cases %}
+                            <tr>
+                                <td class="font-monospace small">{{ case.id|slice:":8" }}...</td>
+                                <td><span class="badge badge-status status-{{ case.status }}">{{ case.get_status_display }}</span></td>
+                                <td>{{ case.progress_percentage }}%</td>
+                                <td class="small text-secondary">{{ case.assigned_staff.username|default:"Unassigned" }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'onboarding_detail' case.id %}" class="btn btn-sm btn-outline-primary">
+                                        Open Case &rarr;
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5" class="text-center py-3 text-secondary">No onboarding cases yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

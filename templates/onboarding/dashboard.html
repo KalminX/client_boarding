@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Client Onboarding{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Onboarding Operations Dashboard</h2>
+        <p class="text-secondary mb-0">Real-time visibility into client pipelines, automated workflows, and background jobs.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <!-- Synchronous Worker Execution Trigger for instant local demo -->
+        <form method="post" action="{% url 'run_worker_once' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary shadow-sm" title="Run worker synchronously for due jobs">
+                <i class="bi bi-play-circle-fill me-1"></i> Run Worker Once
+            </button>
+        </form>
+        <a href="{% url 'contract_create' %}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Contract
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance & Pipeline Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small fw-semibold text-uppercase">Active Onboarding</span>
+                    <h3 class="fw-bold my-1 text-primary">{{ active_cases }}</h3>
+                    <span class="text-secondary small">Total Cases: {{ total_cases }}</span>
+                </div>
+                <div class="p-3 bg-primary-subtle text-primary rounded-3">
+                    <i class="bi bi-kanban fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small fw-semibold text-uppercase">Completed Cases</span>
+                    <h3 class="fw-bold my-1 text-success">{{ completed_cases }}</h3>
+                    <span class="text-success small"><i class="bi bi-check-circle me-1"></i>Requirements satisfied</span>
+                </div>
+                <div class="p-3 bg-success-subtle text-success rounded-3">
+                    <i class="bi bi-check2-circle fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small fw-semibold text-uppercase">Stalled / Overdue</span>
+                    <h3 class="fw-bold my-1 text-danger">{{ stalled_cases }}</h3>
+                    <span class="text-secondary small">Escalated to staff</span>
+                </div>
+                <div class="p-3 bg-danger-subtle text-danger rounded-3">
+                    <i class="bi bi-exclamation-octagon fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small fw-semibold text-uppercase">Queue Health</span>
+                    <h3 class="fw-bold my-1 text-info">{{ pending_jobs_count }} <span class="fs-6 text-secondary fw-normal">pending</span></h3>
+                    <span class="{% if failed_jobs_count > 0 %}text-danger fw-bold{% else %}text-secondary{% endif %} small">
+                        <i class="bi bi-bug me-1"></i>{{ failed_jobs_count }} failed jobs
+                    </span>
+                </div>
+                <div class="p-3 bg-info-subtle text-info rounded-3">
+                    <i class="bi bi-cpu fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Cases Table & Live Jobs snapshot -->
+<div class="row g-4">
+    <!-- Active Onboarding Cases Section -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Active Onboarding Pipelines</h5>
+                <a href="{% url 'onboarding_list' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Client / Company</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Assigned Staff</th>
+                            <th>Target Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in recent_cases %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ case.client.company_name }}</div>
+                                    <div class="text-secondary small">{{ case.client.name }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-status status-{{ case.status }}">
+                                        {{ case.get_status_display }}
+                                    </span>
+                                </td>
+                                <td style="width: 180px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar {% if case.status == 'completed' %}bg-success{% else %}bg-primary{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {{ case.progress_percentage }}%;"></div>
+                                        </div>
+                                        <span class="small fw-semibold text-secondary">{{ case.progress_percentage }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="small text-secondary">
+                                        {{ case.assigned_staff.username|default:"Unassigned" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="small text-secondary">{{ case.target_completion_date|default:"-" }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'onboarding_detail' case.id %}" class="btn btn-sm btn-outline-primary">
+                                        Manage <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-secondary">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    No onboarding cases found. Create and sign a contract to initialize an automated case!
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Staff Alerts & Background Job Queue Health -->
+    <div class="col-lg-4">
+        <!-- Staff Alerts -->
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Staff Alerts & Escalations</h5>
+                <span class="badge bg-danger rounded-pill">{{ recent_alerts|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for alert in recent_alerts %}
+                        <div class="list-group-item p-3">
+                            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                <span class="fw-bold small text-{% if alert.alert_type == 'action_required' %}warning{% elif alert.alert_type == 'warning' %}danger{% else %}info{% endif %}">
+                                    <i class="bi bi-bell-fill me-1"></i>{{ alert.title }}
+                                </span>
+                                <span class="text-secondary small">{{ alert.created_at|timesince }} ago</span>
+                            </div>
+                            <p class="mb-1 text-secondary small">{{ alert.message }}</p>
+                            {% if alert.case %}
+                                <a href="{% url 'onboarding_detail' alert.case.id %}" class="small text-primary fw-semibold">
+                                    View Case &rarr;
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="p-3 text-center text-secondary small">
+                            <i class="bi bi-check2-circle text-success fs-4 d-block mb-1"></i>
+                            All caught up! No active alerts.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Background Jobs -->
+        <div class="card">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Background Jobs Queue</h5>
+                <a href="{% url 'job_monitor' %}" class="btn btn-sm btn-outline-secondary">Job Monitor</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for job in recent_jobs %}
+                        <div class="list-group-item p-2 px-3 d-flex align-items-center justify-content-between">
+                            <div class="overflow-hidden me-2">
+                                <div class="fw-semibold small text-truncate">{{ job.job_type }}</div>
+                                <div class="text-secondary" style="font-size:0.75rem;">
+                                    Attempt {{ job.attempts }}/{{ job.max_attempts }} • {{ job.created_at|timesince }} ago
+                                </div>
+                            </div>
+                            <span class="badge badge-status status-{{ job.status }}" style="font-size:0.7rem;">
+                                {{ job.status }}
+                            </span>
+                        </div>
+                    {% empty %}
+                        <div class="p-3 text-center text-secondary small">Queue is currently empty.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent System Audit History -->
+<div class="card mt-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Recent Workflow Execution & Audit History</h5>
+        <a href="{% url 'audit_log' %}" class="btn btn-sm btn-outline-secondary">Full Audit Trail</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Event Type</th>
+                    <th>Description</th>
+                    <th>Related Case</th>
+                    <th>Triggered By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in recent_audit_events %}
+                    <tr>
+                        <td class="small text-secondary" style="white-space:nowrap;">{{ event.timestamp|date:"Y-m-d H:i:s" }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary border font-monospace" style="font-size:0.75rem;">{{ event.event_type }}</span></td>
+                        <td class="small">{{ event.description }}</td>
+                        <td>
+                            {% if event.case %}
+                                <a href="{% url 'onboarding_detail' event.case.id %}" class="small text-decoration-none">
+                                    {{ event.case.client.company_name }}
+                                </a>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="small text-secondary">{{ event.user.username|default:"System Engine" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center py-3 text-secondary small">No execution logs yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

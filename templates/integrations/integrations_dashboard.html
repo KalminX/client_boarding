@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}External Integrations - BoardFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">External Integrations Activity</h2>
+        <p class="text-secondary mb-0">Inspect recorded artifacts from Cloud Storage, CRM, Task Boards, and Email Delivery.</p>
+    </div>
+</div>
+
+<!-- Integration Provider Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-info">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="small fw-semibold text-secondary text-uppercase">Storage Provider</span>
+                    <h5 class="fw-bold my-1 text-info">Google Drive</h5>
+                    <span class="badge bg-info-subtle text-info">Adapter: Active</span>
+                </div>
+                <i class="bi bi-folder-fill fs-2 text-info"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-warning">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="small fw-semibold text-secondary text-uppercase">CRM Provider</span>
+                    <h5 class="fw-bold my-1 text-warning">HubSpot / Salesforce</h5>
+                    <span class="badge bg-warning-subtle text-warning">Adapter: Active</span>
+                </div>
+                <i class="bi bi-person-lines-fill fs-2 text-warning"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-primary">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="small fw-semibold text-secondary text-uppercase">Task Provider</span>
+                    <h5 class="fw-bold my-1 text-primary">Asana / ClickUp</h5>
+                    <span class="badge bg-primary-subtle text-primary">Adapter: Active</span>
+                </div>
+                <i class="bi bi-kanban-fill fs-2 text-primary"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-success">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="small fw-semibold text-secondary text-uppercase">AI Document Extractor</span>
+                    <h5 class="fw-bold my-1 text-success">Claude / AI Engine</h5>
+                    <span class="badge bg-success-subtle text-success">Adapter: Active</span>
+                </div>
+                <i class="bi bi-cpu-fill fs-2 text-success"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Synced Client Records Table -->
+<div class="card mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0">Synchronized Onboarding Workspace Artifacts</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Company Name</th>
+                    <th>Storage Folder Link</th>
+                    <th>CRM Deal & Account Link</th>
+                    <th>Project Task Board Link</th>
+                    <th class="text-end">Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in cases %}
+                    <tr>
+                        <td class="fw-bold">{{ case.client.company_name }}</td>
+                        <td>
+                            {% if case.folder_url %}
+                                <a href="{{ case.folder_url }}" target="_blank" class="small text-info text-decoration-none">
+                                    <i class="bi bi-folder me-1"></i> {{ case.folder_id }}
+                                </a>
+                            {% else %}<span class="text-secondary small">Pending</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if case.crm_url %}
+                                <a href="{{ case.crm_url }}" target="_blank" class="small text-warning text-decoration-none">
+                                    <i class="bi bi-person-badge me-1"></i> {{ case.crm_id }}
+                                </a>
+                            {% else %}<span class="text-secondary small">Pending</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if case.project_board_url %}
+                                <a href="{{ case.project_board_url }}" target="_blank" class="small text-primary text-decoration-none">
+                                    <i class="bi bi-list-task me-1"></i> {{ case.project_board_id }}
+                                </a>
+                            {% else %}<span class="text-secondary small">Pending</span>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'onboarding_detail' case.id %}" class="btn btn-sm btn-outline-secondary">
+                                Open Case
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center py-4 text-secondary">No synchronized integrations yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Email Logs Table -->
+<div class="card">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0">Recorded Email Notifications & Deliveries</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Recipient</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Sent At</th>
+                    <th>Idempotency Key</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for email in recent_emails %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ email.recipient_email }}</div>
+                            <div class="text-secondary small">{{ email.recipient_name }}</div>
+                        </td>
+                        <td class="small">{{ email.subject }}</td>
+                        <td><span class="badge bg-success-subtle text-success">{{ email.status }}</span></td>
+                        <td class="small text-secondary">{{ email.sent_at|date:"Y-m-d H:i:s"|default:"-" }}</td>
+                        <td class="small text-secondary font-monospace" style="font-size:0.75rem;">{{ email.idempotency_key|default:"-" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center py-4 text-secondary">No emails recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

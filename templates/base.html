@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Client Onboarding Automation{% endblock %} - BoardFlow</title>
+    <!-- Modern Bootstrap 5 CDN + Icons for clean responsive UI -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary-accent: #2563eb;
+            --primary-dark: #1e40af;
+            --bg-light: #f8fafc;
+            --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        body {
+            background-color: var(--bg-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: #0f172a;
+            color: #f8fafc;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .sidebar-brand {
+            padding: 1.5rem 1.25rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .nav-link {
+            color: #94a3b8;
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #ffffff;
+            background-color: #1e293b;
+            border-left: 4px solid var(--primary-accent);
+        }
+        .card {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            box-shadow: var(--card-shadow);
+        }
+        .badge-status {
+            font-size: 0.8rem;
+            padding: 0.35em 0.65em;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .status-succeeded, .status-completed, .status-approved { background-color: #dcfce7; color: #15803d; }
+        .status-running, .status-processing, .status-in_progress { background-color: #dbeafe; color: #1d4ed8; }
+        .status-pending, .status-not_started { background-color: #fef3c7; color: #b45309; }
+        .status-retrying, .status-review_required, .status-awaiting_review { background-color: #ffedd5; color: #c2410c; }
+        .status-failed, .status-stalled, .status-rejected { background-color: #fee2e2; color: #b91c1c; }
+        .status-cancelled { background-color: #f1f5f9; color: #64748b; }
+        .table th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar d-flex flex-column">
+        <div class="sidebar-brand d-flex align-items-center gap-2">
+            <i class="bi bi-rocket-takeoff-fill text-primary"></i>
+            <span>BoardFlow</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-auto" style="font-size:0.65rem;">MVP</span>
+        </div>
+        
+        <ul class="nav flex-column mt-3 mb-auto">
+            <li class="nav-item">
+                <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'onboarding_list' %}" class="nav-link {% if 'onboarding' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-kanban"></i> Onboarding Cases
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'contract_list' %}" class="nav-link {% if 'contract' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-file-earmark-check"></i> Contracts
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'client_list' %}" class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-people"></i> Clients
+                </a>
+            </li>
+            
+            <div class="sidebar-heading px-3 pt-3 pb-1 text-uppercase text-secondary" style="font-size:0.7rem; font-weight:700;">Automation & Queue</div>
+            
+            <li class="nav-item">
+                <a href="{% url 'job_monitor' %}" class="nav-link {% if 'job' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-cpu"></i> Background Jobs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'integrations_dashboard' %}" class="nav-link {% if 'integrations' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-plug"></i> Integrations
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'audit_log' %}" class="nav-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-journal-text"></i> Audit Trail
+                </a>
+            </li>
+        </ul>
+
+        <div class="p-3 border-top border-secondary">
+            {% if user.is_authenticated %}
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:32px; height:32px; font-weight:600;">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="text-white small text-truncate fw-semibold">{{ user.username }}</div>
+                        <div class="text-secondary small">Staff Member</div>
+                    </div>
+                </div>
+                <form action="{% url 'logout' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-box-arrow-right"></i> Log out
+                    </button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-sm btn-primary w-100">Log in</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Toast Messages -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

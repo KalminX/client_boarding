@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Contracts - BoardFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Contract Management</h2>
+        <p class="text-secondary mb-0">Track contract lifecycle, e-signature status, and onboarding triggers.</p>
+    </div>
+    <a href="{% url 'contract_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Create Contract
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Contract Title</th>
+                    <th>Client / Company</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                    <th>Signed Date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contract in page_obj %}
+                    <tr>
+                        <td class="fw-bold">{{ contract.title }}</td>
+                        <td>{{ contract.client.company_name }}</td>
+                        <td>${{ contract.contract_value|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge badge-status status-{{ contract.status }}">{{ contract.get_status_display }}</span>
+                        </td>
+                        <td class="small text-secondary">{{ contract.signed_at|date:"M d, Y"|default:"-" }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'contract_detail' contract.id %}" class="btn btn-sm btn-outline-primary">
+                                View & Sign &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center py-4 text-secondary">No contracts found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

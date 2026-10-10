@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Contract: {{ contract.title }} - BoardFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="fw-bold mb-0">{{ contract.title }}</h2>
+            <span class="badge badge-status status-{{ contract.status }} fs-6">{{ contract.get_status_display }}</span>
+        </div>
+        <p class="text-secondary mb-0">Client: <a href="{% url 'client_detail' contract.client.id %}" class="fw-semibold text-decoration-none">{{ contract.client.company_name }}</a></p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if onboarding_case %}
+            <a href="{% url 'onboarding_detail' onboarding_case.id %}" class="btn btn-outline-success">
+                <i class="bi bi-kanban me-1"></i> View Linked Onboarding Case
+            </a>
+        {% endif %}
+        <a href="{% url 'contract_list' %}" class="btn btn-outline-secondary">
+            &larr; Back to Contracts
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Contract Info -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-3 text-primary">Contract Details</h5>
+            <dl class="row mb-0 small">
+                <dt class="col-sm-4 text-secondary">Contract Value:</dt>
+                <dd class="col-sm-8 fw-bold fs-5 text-dark">${{ contract.contract_value|floatformat:2 }} {{ contract.currency }}</dd>
+
+                <dt class="col-sm-4 text-secondary">Client Company:</dt>
+                <dd class="col-sm-8">{{ contract.client.company_name }}</dd>
+
+                <dt class="col-sm-4 text-secondary">Primary Contact:</dt>
+                <dd class="col-sm-8">{{ contract.client.name }} ({{ contract.client.primary_email }})</dd>
+
+                <dt class="col-sm-4 text-secondary">Terms & Scope:</dt>
+                <dd class="col-sm-8">{{ contract.terms_summary|default:"Standard Professional Services Agreement terms."|linebreaksbr }}</dd>
+
+                <dt class="col-sm-4 text-secondary">Status:</dt>
+                <dd class="col-sm-8"><span class="badge badge-status status-{{ contract.status }}">{{ contract.get_status_display }}</span></dd>
+
+                {% if contract.status == 'signed' %}
+                    <dt class="col-sm-4 text-secondary">Signed At:</dt>
+                    <dd class="col-sm-8 text-success fw-semibold">{{ contract.signed_at|date:"Y-m-d H:i:s" }}</dd>
+
+                    <dt class="col-sm-4 text-secondary">Signed By:</dt>
+                    <dd class="col-sm-8">{{ contract.signed_by_name }} ({{ contract.signed_by_email }})</dd>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+
+    <!-- Signature Action Box -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100 border-primary shadow-sm">
+            {% if contract.status != 'signed' %}
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="p-2 bg-primary-subtle text-primary rounded-circle">
+                        <i class="bi bi-pen-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Sign Contract & Launch Automation</h5>
+                        <span class="text-secondary small">Triggers instant background pipeline and case provisioning</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-info small mb-4">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    Clicking <strong>Sign Contract</strong> will atomically record the signature event, initialize the Onboarding Case, and durably enqueue all initialization jobs (Welcome Email, Folder setup, CRM sync, Task Board setup).
+                </div>
+
+                <form method="post" action="{% url 'sign_contract' contract.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Signer Name</label>
+                        <input type="text" name="signer_name" value="{{ contract.client.name }}" class="form-control" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Signer Email</label>
+                        <input type="email" name="signer_email" value="{{ contract.client.primary_email }}" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="bi bi-check2-circle me-1"></i> Sign Contract & Trigger Onboarding
+                    </button>
+                </form>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
+                    <h4 class="fw-bold text-success">Contract is Signed & Active</h4>
+                    <p class="text-secondary small mb-4">
+                        Signed on {{ contract.signed_at|date:"F d, Y at H:i" }} by <strong>{{ contract.signed_by_name }}</strong>.
+                    </p>
+                    {% if onboarding_case %}
+                        <a href="{% url 'onboarding_detail' onboarding_case.id %}" class="btn btn-primary">
+                            <i class="bi bi-kanban me-1"></i> Go to Onboarding Case Workspace &rarr;
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

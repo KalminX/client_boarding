@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Onboarding Portal - {{ case.client.company_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; }
+        .portal-header { background: #0f172a; color: white; padding: 2.5rem 0; border-bottom: 4px solid #2563eb; }
+        .card { border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .badge-status { font-size: 0.8rem; padding: 0.35em 0.65em; border-radius: 9999px; text-transform: uppercase; font-weight: 600; }
+        .status-succeeded, .status-completed, .status-approved { background-color: #dcfce7; color: #15803d; }
+        .status-running, .status-processing, .status-in_progress { background-color: #dbeafe; color: #1d4ed8; }
+        .status-pending, .status-not_started { background-color: #fef3c7; color: #b45309; }
+        .status-review_required { background-color: #ffedd5; color: #c2410c; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="portal-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary mb-2 text-uppercase" style="letter-spacing: 0.5px;">Client Onboarding Portal</span>
+                    <h2 class="fw-bold mb-1">Welcome, {{ case.client.company_name }}!</h2>
+                    <p class="text-secondary text-light mb-0" style="opacity: 0.85;">
+                        Please complete the required intake details and upload verification documents below to initiate services.
+                    </p>
+                </div>
+                <div class="text-end d-none d-md-block">
+                    <div class="small text-light" style="opacity:0.75;">Contract Reference</div>
+                    <div class="fw-bold">{{ case.contract.title }}</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container my-5">
+        <!-- Toast / Flash messages -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Overall Progress Card -->
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold mb-0">Onboarding Completion Progress</h5>
+                <span class="fw-bold text-primary">{{ case.progress_percentage }}% Completed</span>
+            </div>
+            <div class="progress mb-3" style="height: 12px;">
+                <div class="progress-bar {% if case.status == 'completed' %}bg-success{% else %}bg-primary{% endif %}" 
+                     role="progressbar" 
+                     style="width: {{ case.progress_percentage }}%;"></div>
+            </div>
+            
+            <div class="row g-2">
+                {% for item in checklist_items %}
+                    <div class="col-md-6">
+                        <div class="p-2 border rounded d-flex align-items-center gap-2 bg-light">
+                            {% if item.is_completed %}
+                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                <span class="small fw-semibold text-secondary text-decoration-line-through">{{ item.title }}</span>
+                            {% else %}
+                                <i class="bi bi-circle text-warning fs-5"></i>
+                                <span class="small fw-semibold text-dark">{{ item.title }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- 1. INTAKE QUESTIONNAIRE FORM -->
+            <div class="col-lg-7">
+                <div class="card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="p-2 bg-primary-subtle text-primary rounded-3">
+                            <i class="bi bi-card-checklist fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">1. Client Intake Questionnaire</h5>
+                            <span class="text-secondary small">Provide official business details and billing contact</span>
+                        </div>
+                    </div>
+
+                    {% if intake_submission %}
+                        <div class="alert alert-success d-flex align-items-center gap-2 py-2 mb-4">
+                            <i class="bi bi-check-circle-fill fs-5"></i>
+                            <div>Intake form submitted on {{ intake_submission.submitted_at|date:"M d, Y H:i" }}. You can update fields below if needed.</div>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'client_portal_submit' access_token %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Legal Company Name *</label>
+                            {{ intake_form.company_legal_name }}
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Tax ID / EIN</label>
+                                {{ intake_form.tax_id }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Target Launch Date</label>
+                                {{ intake_form.target_launch_date }}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Billing Contact Name *</label>
+                                {{ intake_form.billing_contact_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Billing Contact Email *</label>
+                                {{ intake_form.billing_contact_email }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Billing Address *</label>
+                            {{ intake_form.billing_address }}
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Technical Contact Name</label>
+                                {{ intake_form.technical_contact_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Technical Contact Email</label>
+                                {{ intake_form.technical_contact_email }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Primary Use Case & Objectives</label>
+                            {{ intake_form.primary_use_case }}
+                        </div>
+
+                        <div class="mb-4 form-check">
+                            {{ intake_form.privacy_consent_given }}
+                            <label class="form-check-label small" for="{{ intake_form.privacy_consent_given.id_for_label }}">
+                                I confirm the information provided above is accurate and acknowledge the terms of onboarding data processing. *
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                            <i class="bi bi-send me-1"></i> Save & Submit Intake Questionnaire
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. DOCUMENT UPLOADS -->
+            <div class="col-lg-5">
+                <div class="card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="p-2 bg-info-subtle text-info rounded-3">
+                            <i class="bi bi-file-earmark-arrow-up fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">2. Required Document Uploads</h5>
+                            <span class="text-secondary small">Upload Tax W-9, Certifications, or Signatory ID</span>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{% url 'upload_document' case.id %}" enctype="multipart/form-data" class="mb-4 p-3 bg-light rounded border">
+                        {% csrf_token %}
+                        <input type="hidden" name="access_token" value="{{ access_token }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Choose File (.pdf, .txt, .png, .jpg)</label>
+                            {{ upload_form.file }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Document Type</label>
+                            {{ upload_form.document_type_hint }}
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-cloud-arrow-up me-1"></i> Upload Document
+                        </button>
+                    </form>
+
+                    <h6 class="fw-bold small text-uppercase text-secondary mb-2">Uploaded Documents</h6>
+                    <div class="list-group list-group-flush">
+                        {% for doc in documents %}
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                <div class="overflow-hidden me-2">
+                                    <div class="fw-semibold small text-truncate">{{ doc.file_name }}</div>
+                                    <div class="text-secondary" style="font-size:0.75rem;">
+                                        {{ doc.file_size_bytes|filesizeformat }} • {{ doc.document_type_hint }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="badge badge-status status-{{ doc.status }}" style="font-size:0.7rem;">
+                                        {{ doc.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="text-secondary small text-center py-3">No documents uploaded yet.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center text-secondary py-4 small">
+        <p class="mb-0">Secure Client Onboarding System • Encrypted Storage & Protected Data</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

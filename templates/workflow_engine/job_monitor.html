@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Background Job Monitor - BoardFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Database-Backed Job Monitor</h2>
+        <p class="text-secondary mb-0">Inspect persistent jobs, execution history, lease recovery, and retry exhausted tasks.</p>
+    </div>
+    
+    <div class="d-flex gap-2">
+        <!-- Run Worker Once Button -->
+        <form method="post" action="{% url 'run_worker_once' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-play-circle-fill me-1"></i> Run Worker Once
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Status Filter Tabs / Counts -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{% url 'job_monitor' %}?status=all" class="btn btn-sm {% if status_filter == 'all' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        All <span class="badge bg-secondary ms-1">{{ counts.all }}</span>
+    </a>
+    <a href="{% url 'job_monitor' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %}">
+        Pending <span class="badge bg-warning text-dark ms-1">{{ counts.pending }}</span>
+    </a>
+    <a href="{% url 'job_monitor' %}?status=running" class="btn btn-sm {% if status_filter == 'running' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        Running <span class="badge bg-primary ms-1">{{ counts.running }}</span>
+    </a>
+    <a href="{% url 'job_monitor' %}?status=retrying" class="btn btn-sm {% if status_filter == 'retrying' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+        Retrying <span class="badge bg-warning text-dark ms-1">{{ counts.retrying }}</span>
+    </a>
+    <a href="{% url 'job_monitor' %}?status=succeeded" class="btn btn-sm {% if status_filter == 'succeeded' %}btn-success{% else %}btn-outline-success{% endif %}">
+        Succeeded <span class="badge bg-success ms-1">{{ counts.succeeded }}</span>
+    </a>
+    <a href="{% url 'job_monitor' %}?status=failed" class="btn btn-sm {% if status_filter == 'failed' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+        Failed <span class="badge bg-danger ms-1">{{ counts.failed }}</span>
+    </a>
+    <a href="{% url 'job_monitor' %}?status=cancelled" class="btn btn-sm {% if status_filter == 'cancelled' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        Cancelled <span class="badge bg-secondary ms-1">{{ counts.cancelled }}</span>
+    </a>
+</div>
+
+<!-- Jobs Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Job ID & Type</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Attempts</th>
+                    <th>Scheduled For</th>
+                    <th>Worker & Lease</th>
+                    <th>Payload & Result</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in page_obj %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold font-monospace text-primary small">{{ job.job_type }}</div>
+                            <div class="text-secondary font-monospace" style="font-size:0.75rem;">{{ job.id }}</div>
+                            {% if job.correlation_id %}
+                                <div class="small text-secondary">Case: <span class="font-monospace" style="font-size:0.75rem;">{{ job.correlation_id|slice:":8" }}...</span></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-status status-{{ job.status }}">{{ job.status }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ job.priority }}</span>
+                        </td>
+                        <td>
+                            <span class="fw-semibold {% if job.attempts >= job.max_attempts %}text-danger{% endif %}">
+                                {{ job.attempts }} / {{ job.max_attempts }}
+                            </span>
+                        </td>
+                        <td class="small text-secondary" style="white-space:nowrap;">
+                            {{ job.scheduled_at|date:"Y-m-d H:i:s" }}
+                        </td>
+                        <td class="small text-secondary">
+                            {% if job.worker_id %}
+                                <div class="font-monospace text-truncate" style="max-width:120px;" title="{{ job.worker_id }}">{{ job.worker_id }}</div>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-bs-toggle="modal" data-bs-target="#jobModal{{ job.id|slice:':8' }}">
+                                <i class="bi bi-code-slash me-1"></i> Inspect
+                            </button>
+
+                            <!-- Modal for Job Details -->
+                            <div class="modal fade" id="jobModal{{ job.id|slice:':8' }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title font-monospace fw-bold">{{ job.job_type }} ({{ job.id }})</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <h6 class="fw-bold small text-uppercase text-secondary">Payload</h6>
+                                            <pre class="bg-light p-3 border rounded font-monospace small">{{ job.payload|pprint }}</pre>
+
+                                            {% if job.result %}
+                                                <h6 class="fw-bold small text-uppercase text-success mt-3">Execution Result</h6>
+                                                <pre class="bg-light p-3 border border-success-subtle rounded font-monospace small text-success">{{ job.result|pprint }}</pre>
+                                            {% endif %}
+
+                                            {% if job.last_error %}
+                                                <h6 class="fw-bold small text-uppercase text-danger mt-3">Last Error & Traceback</h6>
+                                                <pre class="bg-light p-3 border border-danger-subtle rounded font-monospace small text-danger" style="max-height:250px; overflow-y:auto;">{{ job.last_error }}</pre>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-1">
+                                {% if job.status == 'failed' or job.status == 'cancelled' %}
+                                    <form method="post" action="{% url 'retry_job' job.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Requeue job for immediate execution">
+                                            <i class="bi bi-arrow-clockwise"></i> Retry
+                                        </button>
+                                    </form>
+                                {% elif job.status == 'pending' or job.status == 'retrying' %}
+                                    <form method="post" action="{% url 'cancel_job' job.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Cancel job">
+                                            <i class="bi bi-x-circle"></i> Cancel
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-secondary">No background jobs found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+            <span class="small text-secondary">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?status={{ status_filter }}&page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?status={{ status_filter }}&page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
